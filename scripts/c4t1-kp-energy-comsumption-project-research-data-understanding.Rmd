@@ -5,6 +5,7 @@ date: "3/25/2021"
 output:
    html_document:
     highlight: zenburn
+    keep_md: true
 ---
 
 ```{r setup, include=FALSE}
@@ -29,8 +30,7 @@ Questions from the client:
 
 
 
-# DATA #################################
-
+### **Data Info** #################################
 
 Dataset Information (from documentation)
 
@@ -58,14 +58,14 @@ Dataset Information (from documentation)
 
 
 
-### Sub-meters
+#### *Sub-meters* ####################################
 
 Sub-meters provide room-by-room and/or appliance specific data about energy usage. In other words, a building/residence has a main/master meter that records the energy usage for the entire building/residence. Readings from main meters are what energy companies use for billing purposes. In addition to main meters, buildings/residences may also have sub-meters that just record energy usage from particular areas/rooms or applicances. Building managers and consumers typically use sub-meter data to get insight into and, perhaps improve, energy usage in particular areas.
 
 
 
 
-## LOAD PKGS & GET DATA #################################
+## Load Packages #################################
 
 ```{r, warning=FALSE, message=FALSE}
 #load pkgs 
@@ -84,7 +84,7 @@ library(fable) # time series forecasting
 ```
 
 
-## DB Connection
+## Get Data ###############################
 ```{r}
 # create connection to MySQL database
 con <-  dbConnect(RMariaDB::MariaDB(),
@@ -96,7 +96,6 @@ con <-  dbConnect(RMariaDB::MariaDB(),
 
 >*Reminder*: call dbDisconnect() when finished working with a connection
 
-## Get Energy Data
 
 ```{r}
 # list tables contained in database
@@ -184,7 +183,7 @@ glimpse(yr2010)
 
 # DATA WRANGLING ################################
 
-## Find Complete Datasets
+## *Find Complete Datasets*
 
 I only want to include datasets that have submeter readings for the full year. I'll check the unique values in "Date" column to determine which years are complete.  
 
@@ -229,7 +228,7 @@ unique(yr2010$Date)
 
 
 
-## Join 2007-09 Datasets 
+## *Join 2007-09 Datasets*
 
 ```{r, results='hide'}
 # make var names uniform
@@ -246,7 +245,7 @@ yrs2007_2009 <- bind_rows(yr2007, yr2008, yr2009)
 
 
 
-## Rename Variables
+## *Rename Variables*
 
 ```{r}
 yrs2007_2009 <- yrs2007_2009 %>% 
@@ -260,7 +259,7 @@ glimpse(yrs2007_2009)
 
 
 
-## Create Date-Time Variable
+## *Create Date-Time Variable* #########################
 
 *Unite Columns*
 ```{r}
@@ -283,7 +282,9 @@ glimpse(yrs2007_2009)
 
 
 
-## Create Tsibble
+## *Create Tsibble* ##########################
+
+Tsibbles are an extension of the tibble dataform. Tibbles are similar to dataframes, but they have more structure/impose more constraints.
 
 ```{r}
 # remove columns, reshape from wide to long, coerce tsibble
@@ -298,7 +299,7 @@ yrs_tsb <- yrs2007_2009 %>%
 ```
 
 
-## Missing Values
+## *Handle Missing Values* ########################
 
 Data documentation reports 1.25% of observations are missing, and missing values are represented by blanks (gaps). Time series analysis/forcasting requires time interval with no gaps.
 
@@ -324,15 +325,15 @@ yrs_tsb <- yrs_tsb %>%
 
 
 
-# EXPLORATION ###########################################
+# DATA EXPLORATION ###########################################
 
-## Daily Analysis
+## *Daily Analysis*
 
 It may be illuminating to zoom in on a single day and examine the pattern of individual readings (instead of averages) from each submeter throught the day. 
 
 
 
-```{r, warning=FALSE,  message=FALSE, cache=TRUE}
+```{r message=FALSE, warning=FALSE, cache=TRUE}
 # plot readings for Jan. 9, 2008
 yrs_tsb %>% 
   filter_index("2008-01-09") %>% 
@@ -408,7 +409,7 @@ yrs_tsb %>%
 
 ### Week of April 7-13, 2008
 
-Let's look at the energy usage over the first full week (Mon - Sun) in April 2008. ![2008 Calendar](partial_2008_cal.png) Since the full dataset contains over 30,000 observations for that time period, using all the data points would make the graph too crowded--so it make sense to use the 10 min subset here.
+Let's look at the energy usage over the first full week (Mon - Sun) in April 2008. (insert: 2008 Calendar partial_2008_cal.png) Since the full dataset contains over 30,000 observations for that time period, using all the data points would make the graph too crowded--so it make sense to use the 10 min subset here.
 
 ```{r, cache=TRUE, message=FALSE}
 # plot submeter readings for April 9-13, 2008 using subset
@@ -635,17 +636,17 @@ fit_daily08 %>%
 ## Create Additional Forecast
 
 ```{r}
- yrs2007_2009 %>% 
-  filter(weekdays(date_time) %in% c("Saturday", "Sunday")) %>% 
-  filter(hour(date_time) %in% c(0, 10, 20)) %>%
-  filter(minute(date_time) %in% 01) %>% 
-  pivot_longer(names_to = "submeter",
-               values_to = "reading",
-               kitchen:AC) %>% 
-  select(date, submeter, reading) %>% 
-  filter(submeter == "AC") %>% 
-  mutate(date = ymd(date)) %>% 
-  as_tsibble(key = submeter, index = date, validate = TRUE)
+ # yrs2007_2009 %>% 
+ #  filter(weekdays(date_time) %in% c("Saturday", "Sunday")) %>% 
+ #  filter(hour(date_time) %in% c(0, 10, 20)) %>%
+ #  filter(minute(date_time) %in% 01) %>% 
+ #  pivot_longer(names_to = "submeter",
+ #               values_to = "reading",
+ #               kitchen:AC) %>% 
+ #  select(date, submeter, reading) %>% 
+ #  filter(submeter == "AC") %>% 
+ #  mutate(date = ymd(date))  
+ # as_tsibble(key = submeter, index = date, validate = TRUE)
 ```
 
 
