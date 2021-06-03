@@ -1,0 +1,138 @@
+---
+title: "experiments_notes_cuts"
+author: "Katherine Piatti"
+date: "4/6/2021"
+output: html_document
+---
+
+
+## xts
+
+i found several resources advising doing time series anaylsis using xts objects. i tried that first, but am finding it too hard to figure out. i am cutting and pasting the stuff i did with that and adding it here in case i was to use it later.
+
+
+
+### Create Tsibble
+
+```{r}
+span2007_2009TS <- as_tsibble(span2007_2009, index = date_time)
+
+span2007_2009TS
+```
+
+
+*Missing Values*
+
+```{r}
+#check for missing values
+span2007_2009TS %>% 
+  has_gaps()
+
+# count gaps/blanks (i.e.implicit missing values)
+span2007_2009TS %>% 
+  count_gaps()
+
+
+#fill gaps with 0
+span2007_2009TS <- span2007_2009TS %>% 
+  fill_gaps(.full = TRUE)
+
+span2007_2009TS %>% 
+  has_gaps()
+```
+
+
+
+
+======================================================
+EXPERIMENTATION
+===============================================
+
+## can i filter out every 10 minutes from a date-time object
+
+lubridate functions that select elements of date-time objects
+hour( )
+year()
+month()
+week()
+yearmonth()
+min
+
+```{r}
+# fail
+yrs2007_2009 %>% 
+  filter(yrs2007_2009$date_time %in% minute(c(1, 10, 20)))
+```
+
+
+```{r}
+#fail 
+yrs2007_2009 %>% 
+  filter(minutes(yrs2007_2009$date_time == 10))
+```
+
+```{r}
+minute(yrs2007_2009$date_time)
+# extracts vector of minute values in date_time
+```
+
+
+
+```{r}
+minutes <- minute(yrs2007_2009$date_time)
+
+yrs2007_2009 %>% 
+  filter(minutes %in% c(0, 10, 20, 30, 40, 50))
+```
+```{r}
+
+```
+
+
+
+
+```{r}
+hms_yrs07_09 <- yrs2007_2009 %>% 
+  separate("time", c("hours", "min", 'sec'), sep = ":") 
+
+
+
+
+glimpse(hms_yrs07_09)
+```
+
+```{r}
+hist(hms_yrs07_09$min)
+```
+
+
+```{r}
+yrs2007_2009 %>% 
+  filter(min == c(0:60))
+```
+
+
+```{r}
+days <- day(yrs2007_2009$date_time)
+
+unique(days)
+```
+
+```{r}
+seconds <- second(yrs2007_2009$date_time)
+
+unique(seconds)
+```
+
+```{r}
+fml <- minute(TSyrs_long$date_time)
+
+TSyrs_long %>% 
+  filter(fml == C(1, 10, 20, 30, 40, 50, 59))
+
+```
+
+
+
+
+
